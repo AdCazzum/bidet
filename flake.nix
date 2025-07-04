@@ -62,10 +62,12 @@
         };
 
         devShells.default = pkgs.mkShell {
-          packages = with config.packages; [
+          packages = (with config.packages; [
             noir
             barretenberg
-          ];
+          ]) ++ (with pkgs; [
+            nodejs
+          ]);
 
           inputsFrom = [ config.flake-root.devShell ];
 
