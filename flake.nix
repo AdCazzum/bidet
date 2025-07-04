@@ -39,7 +39,7 @@
             protobuf_29 = inputs.nixpkgs-protobuf.legacyPackages.${system}.protobuf;
           };
           barretenberg = pkgs.writeScriptBin "bb" ''
-            ${inputs.barretenberg}
+            ${inputs.barretenberg} $@
           '';
         };
 
