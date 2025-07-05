@@ -1,17 +1,14 @@
 package com.example.moproapp
 
-import MultiplierComponent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -27,7 +24,6 @@ import android.nfc.Tag
 import android.nfc.tech.Ndef
 import android.provider.Settings
 import android.widget.Toast
-import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.shape.RoundedCornerShape
 
 
@@ -53,7 +49,6 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            var tagContent by remember { mutableStateOf("Scan an NFC tag...") }
             var scanState by remember { mutableStateOf(ScanState.Idle) }
             var scannedName by remember { mutableStateOf("") }
             val scannedSet = remember { mutableStateListOf<String>() }
@@ -68,8 +63,6 @@ class MainActivity : ComponentActivity() {
 
 
             onTagScanned = { tagId ->
-                tagContent = "NFC Tag Content: $tagId"
-
                 if (scannedSet.contains(tagId)) {
                     scanState = ScanState.AlreadyScanned
                 } else {
@@ -81,7 +74,6 @@ class MainActivity : ComponentActivity() {
             }
 
             MainScreen(
-                tagText = tagContent,
                 scanState = scanState,
                 scannedName = scannedName
             )
@@ -123,12 +115,9 @@ enum class ScanState {
 
 @Composable
 fun MainScreen(
-    tagText: String,
     scannedName: String = "",
     scanState: ScanState = ScanState.Idle
 ) {
-    var selectedTab by remember { mutableStateOf(0) }
-    val tabs = listOf("Circom", "Halo2", "Noir")
 
     // Gradient background based on scan state
     val backgroundGradient = Brush.verticalGradient(
@@ -150,33 +139,12 @@ fun MainScreen(
                 .padding(innerPadding)
                 .padding(16.dp)
         ) {
-            Text("NFC Reader", fontSize = 24.sp)
+            Text("Bidet \uD83D\uDEBD", fontSize = 24.sp)
 
             Spacer(modifier = Modifier.height(20.dp))
 
             // Cute scan feedback UI
             CuteScanFeedback(scanState, scannedName)
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // Tabs and content
-            TabRow(selectedTabIndex = selectedTab) {
-                tabs.forEachIndexed { index, title ->
-                    Tab(
-                        text = { Text(title) },
-                        selected = selectedTab == index,
-                        onClick = { selectedTab = index }
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            when (selectedTab) {
-                0 -> MultiplierComponent()
-                1 -> FibonacciComponent()
-                2 -> NoirComponent()
-            }
         }
     }
 }
@@ -185,7 +153,7 @@ fun CuteScanFeedback(scanState: ScanState, scannedName: String) {
     val emoji = when (scanState) {
         ScanState.Success -> "🎉"
         ScanState.AlreadyScanned -> "🥺"
-        ScanState.Idle -> "📶"
+        ScanState.Idle -> "\uD83D\uDEBD"
     }
 
     val message = when (scanState) {
