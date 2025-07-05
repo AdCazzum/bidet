@@ -27,6 +27,8 @@ import android.nfc.Tag
 import android.nfc.tech.Ndef
 import android.provider.Settings
 import android.widget.Toast
+import androidx.compose.animation.Crossfade
+import androidx.compose.foundation.shape.RoundedCornerShape
 
 
 class MainActivity : ComponentActivity() {
@@ -178,7 +180,6 @@ fun MainScreen(
         }
     }
 }
-
 @Composable
 fun CuteScanFeedback(scanState: ScanState, scannedName: String) {
     val emoji = when (scanState) {
@@ -187,40 +188,41 @@ fun CuteScanFeedback(scanState: ScanState, scannedName: String) {
         ScanState.Idle -> "📶"
     }
 
-    val scale by animateFloatAsState(
-        targetValue = if (scanState != ScanState.Idle) 1.2f else 1f,
-        animationSpec = androidx.compose.animation.core.tween(durationMillis = 500, easing = androidx.compose.animation.core.FastOutSlowInEasing)
-    )
+    val message = when (scanState) {
+        ScanState.Success -> "You just scanned $scannedName!"
+        ScanState.AlreadyScanned -> "You already scanned $scannedName."
+        ScanState.Idle -> "Waiting for a tag..."
+    }
 
     Card(
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(8.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp)
+            .fillMaxHeight(0.75f)  // fill 75% of vertical space
+            .padding(horizontal = 16.dp),
     ) {
-        Column(
-            modifier = Modifier.padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = emoji,
-                fontSize = 64.sp,
-                modifier = Modifier.scale(scale)
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            val message = when (scanState) {
-                ScanState.Success -> "You just scanned $scannedName!"
-                ScanState.AlreadyScanned -> "You already scanned $scannedName."
-                ScanState.Idle -> "Waiting for a tag..."
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = emoji,
+                    fontSize = 80.sp,
+                    modifier = Modifier.padding(bottom = 24.dp)
+                )
+                Text(
+                    text = message,
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.DarkGray,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
             }
-            Text(
-                text = message,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.DarkGray,
-                textAlign = TextAlign.Center
-            )
         }
     }
 }
