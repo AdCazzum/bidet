@@ -30,9 +30,13 @@ samples, guidance on mobile development, and a full API reference.
 Inside ./mopro directory run
 
 ## Requirements
-- `make`
-- `rustup`
+- Build the Containerfile with Docker / Podman
+- Inside the container shell run the follogin command
 
 ```bash
-ANDROID_NDK_HOME=/home/<user>/Android/Sdk/ndk RUST_BACKTRACE=1 ../.bin/mopro build --platforms android
+ podman  run  --userns=keep-id --env HOME=/home/<user> -v /home/<user>:/home/<user> -it --rm mopro-cli:latest
+```
+
+```bash
+ANDROID_NDK_HOME=/home/<user>/Android/Sdk/ndk RUST_BACKTRACE=1 mopro build --platforms android
 ```

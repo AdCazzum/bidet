@@ -171,3 +171,6 @@ app.*.symbols
 
 .cargo
 .rustup
+
+.target
+*.so
