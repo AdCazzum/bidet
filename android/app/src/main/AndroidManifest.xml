@@ -1,4 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Add this line inside the <manifest> tag, but outside the <application> tag -->
+    <uses-permission android:name="android.permission.NFC" />
+
     <application
         android:label="bidet"
         android:name="${applicationName}"
