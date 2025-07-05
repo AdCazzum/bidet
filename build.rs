@@ -1,3 +1,3 @@
 fn main() {
-    // CIRCOM_TEMPLATE
+    rust_witness::transpile::transpile_wasm("./circuit/poseidon_js");
 }
