@@ -24,6 +24,8 @@ import android.nfc.tech.Ndef
 import android.provider.Settings
 import android.widget.TextView
 import android.widget.Toast
+import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.Color
 
 
 class MainActivity : ComponentActivity() {
@@ -51,15 +53,33 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            Surface {
-                var tagContent by remember { mutableStateOf("Scan an NFC tag...") }
+            // State for tag name and scan status
+            var tagContent by remember { mutableStateOf("Scan an NFC tag...") }
+            var scanState by remember { mutableStateOf(ScanState.Idle) }
+            var scannedName by remember { mutableStateOf("") }
+            val scannedSet = remember { mutableStateListOf<String>() }
 
-                // Assign the lambda to update UI from NFC callback
-                onTagScanned = { content -> tagContent = content }
-                MainScreen(tagContent)
+            // Assign the lambda to handle tag scan event
+            onTagScanned = { tagId ->
+                tagContent = "NFC Tag Content: $tagId"
+
+                if (scannedSet.contains(tagId)) {
+                    scanState = ScanState.AlreadyScanned
+                } else {
+                    scannedSet.add(tagId)
+                    scanState = ScanState.Success
+                }
+
+                scannedName = tagId
             }
 
+            MainScreen(
+                tagText = tagContent,
+                scanState = scanState,
+                scannedName = scannedName
+            )
         }
+
     }
 
     override fun onResume() {
@@ -91,19 +111,57 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+enum class ScanState {
+    Idle, Success, AlreadyScanned
+}
+
 @Composable
-fun MainScreen(tagText: String) {
+fun MainScreen(
+    tagText: String,
+    scannedName: String = "",
+    scanState: ScanState = ScanState.Idle
+) {
     var selectedTab by remember { mutableStateOf(0) }
     val tabs = listOf("Circom", "Halo2", "Noir")
 
-    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-        Column(modifier = Modifier
+    // Set background color based on scan state
+    val backgroundColor = when (scanState) {
+        ScanState.Success -> Color(0xFFD1F5D3) // soft green
+        ScanState.AlreadyScanned -> Color(0xFFF9D5D5) // soft red
+        ScanState.Idle -> Color(0xFFECECEC) // neutral gray
+    }
+
+    Scaffold(
+        modifier = Modifier
             .fillMaxSize()
-            .padding(innerPadding)
+            .background(backgroundColor)
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(16.dp)
         ) {
             Text("NFC Reader", fontSize = 24.sp)
+
             Spacer(modifier = Modifier.height(20.dp))
-            Text(tagText, fontSize = 18.sp)
+
+            // Scan feedback message
+            when (scanState) {
+                ScanState.Idle -> {
+                    Text("Waiting for a tag...", fontSize = 18.sp, color = Color.DarkGray)
+                }
+                ScanState.Success -> {
+                    Text("You just scanned $scannedName! 🎉", fontSize = 18.sp, color = Color(0xFF2E7D32))
+                }
+                ScanState.AlreadyScanned -> {
+                    Text("You already scanned $scannedName. 🥺", fontSize = 18.sp, color = Color(0xFFC62828))
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Tabs and content
             TabRow(selectedTabIndex = selectedTab) {
                 tabs.forEachIndexed { index, title ->
                     Tab(
@@ -113,13 +171,14 @@ fun MainScreen(tagText: String) {
                     )
                 }
             }
+
             Spacer(modifier = Modifier.height(16.dp))
+
             when (selectedTab) {
                 0 -> MultiplierComponent()
                 1 -> FibonacciComponent()
                 2 -> NoirComponent()
             }
-
         }
     }
 }
