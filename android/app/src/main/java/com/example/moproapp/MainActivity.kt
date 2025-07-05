@@ -12,13 +12,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import java.io.File
-import java.io.IOException
-import java.io.InputStream
-import java.io.OutputStream
 
 import android.app.PendingIntent
 import android.content.Intent
@@ -30,27 +25,6 @@ import android.provider.Settings
 import android.widget.TextView
 import android.widget.Toast
 
-
-@Throws(IOException::class)
-fun copyFile(inputStream: InputStream, outputStream: OutputStream) {
-    val buffer = ByteArray(1024)
-    var read: Int
-    while (inputStream.read(buffer).also { read = it } != -1) {
-        outputStream.write(buffer, 0, read)
-    }
-}
-
-@Composable
-fun getFilePathFromAssets(name: String): String {
-    val context = LocalContext.current
-    return remember {
-        val assetManager = context.assets
-        val inputStream = assetManager.open(name)
-        val file = File(context.filesDir, name)
-        copyFile(inputStream, file.outputStream())
-        file.absolutePath
-    }
-}
 
 class MainActivity : ComponentActivity() {
 
@@ -111,7 +85,7 @@ class MainActivity : ComponentActivity() {
             val payload = records?.get(0)?.payload
             val text = payload?.drop(3)?.toByteArray()?.toString(Charsets.UTF_8) // skip lang bytes
             //nfcText.text = "NFC Tag Content: $text"
-            onTagScanned?.invoke("NFC Tag Content: $text")
+            onTagScanned?.invoke(text.toString())
             ndef?.close()
         }
     }
