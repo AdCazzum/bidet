@@ -72,6 +72,7 @@
           inputsFrom = [ config.flake-root.devShell ];
 
           shellHook = ''
+            PATH="$PATH:.bin"
             ${config.pre-commit.installationScript}
           '';
         };
