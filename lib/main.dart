@@ -96,11 +96,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
       /// raw NDEF records (data in hex string)
       /// `{identifier: "", payload: "00010203", type: "0001", typeNameFormat: "nfcWellKnown"}`
-      for (var record in await FlutterNfcKit.readNDEFRawRecords(
-        cached: false,
-      )) {
-        print(jsonEncode(record).toString());
-      }
+      // for (var record in await FlutterNfcKit.readNDEFRawRecords(
+      //  cached: false,
+      // )) {
+      //  print(jsonEncode(record).toString());
+      // }
     }
 
     // write NDEF records if applicable
@@ -113,15 +113,15 @@ class _MyHomePageState extends State<MyHomePage> {
 
     // read / write block / page / sector level data
     // see documentation for platform-specific supportability
-    if (tag.type == NFCTagType.iso15693) {
-      await FlutterNfcKit.writeBlock(
-        1, // index
-        [0xde, 0xad, 0xbe, 0xff], // data
-        iso15693Flags:
-            Iso15693RequestFlags(), // optional flags for ISO 15693
-        iso15693ExtendedMode: false, // use extended mode for ISO 15693
-      );
-    }
+    // if (tag.type == NFCTagType.iso15693) {
+    //  await FlutterNfcKit.writeBlock(
+    //    1, // index
+    //    [0xde, 0xad, 0xbe, 0xff], // data
+    //    iso15693Flags:
+    //        Iso15693RequestFlags(), // optional flags for ISO 15693
+    //    iso15693ExtendedMode: false, // use extended mode for ISO 15693
+    //  );
+    // }
 
     if (tag.type == NFCTagType.mifare_classic) {
       await FlutterNfcKit.authenticateSector(0, keyA: "FFFFFFFFFFFF");
