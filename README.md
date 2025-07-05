@@ -34,3 +34,5 @@ ZK proofs are generated directly on the catcher's phone using **Circom** and **M
 ```bash
 ANDROID_NDK_HOME=/home/<user>/Android/Sdk/ndk RUST_BACKTRACE=1 mopro build --platforms android
 ```
+
+https://bidet-2751756364524000-1.sagaexplorer.io/address/0x6400442155A9bB3521438503AC658523566Bf073?tab=contract
