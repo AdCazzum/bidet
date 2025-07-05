@@ -1,37 +1,31 @@
 # Bidet
 
-```sh
-cd zk
-nargo build
-bb write_vk -b ./target/zk.json -o ./target --oracle_hash keccak
-bb write_solidity_verifier -k ./target/vk -o ./target/Verifier.sol
-nargo execute witness
-bb prove -b ./target/zk.json -w ./target/witness.gz -o ./target --oracle_hash keccak --output_format bytes_and_fields
-echo -n "0x"; cat ./target/proof | od -An -v -t x1 | tr -d $' \n'
-``
-# bidet
+**bidet** is a real-world mobile game where players catch each other and generate **Zero Knowledge Proofs** (ZKPs) to prove that a specific player has been caught — without revealing who it was.
 
-A new Flutter project.
+ZK proofs are generated directly on the catcher's phone using **Circom** and **Mopro**, and then verified on-chain by a smart contract deployed on a **Saga** chainlet.
 
-## Getting Started
+---
 
-This project is a starting point for a Flutter application.
+## Overview
 
-A few resources to get you started if this is your first Flutter project:
+- 🧠 Proofs are generated locally on mobile using `mopro`.
+- 🔒 The identity of the caught player is never revealed.
+- ⛓️ Proofs are submitted to an on-chain verifier (Groth16 verifier contract).
+- ✅ The contract checks validity without learning any private data.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+---
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Tech Stack
 
-# Build bindings for Mopro
-Inside ./mopro directory run
+- **Circom** – ZK circuit language
+- **Mopro** – Mobile-friendly zkSNARK prover
+- **snarkjs** – Setup and proof tooling
+- **Solidity** – On-chain Groth16 verifier
+- **Saga chainlet** – Blockchain deployment target
 
-## Requirements
-- Build the Containerfile with Docker / Podman
-- Inside the container shell run the follogin command
+---
+
+## Dev notes
 
 ```bash
  podman  run  --userns=keep-id --env HOME=/home/<user> -v /home/<user>:/home/<user> -it --rm mopro-cli:latest
