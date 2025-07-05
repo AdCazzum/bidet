@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.example.moproapp"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.moproapp"
@@ -47,6 +47,8 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+    buildToolsVersion = "36.0.0"
+    ndkVersion = "27.0.12077973"
 }
 
 dependencies {

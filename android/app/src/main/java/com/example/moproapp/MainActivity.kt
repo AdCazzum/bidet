@@ -4,21 +4,20 @@ import MultiplierComponent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import java.io.File
-import java.io.IOException
-import java.io.InputStream
-import java.io.OutputStream
 
 import android.app.PendingIntent
 import android.content.Intent
@@ -27,38 +26,15 @@ import android.nfc.NfcAdapter
 import android.nfc.Tag
 import android.nfc.tech.Ndef
 import android.provider.Settings
-import android.widget.TextView
 import android.widget.Toast
+import androidx.compose.animation.Crossfade
+import androidx.compose.foundation.shape.RoundedCornerShape
 
-
-@Throws(IOException::class)
-fun copyFile(inputStream: InputStream, outputStream: OutputStream) {
-    val buffer = ByteArray(1024)
-    var read: Int
-    while (inputStream.read(buffer).also { read = it } != -1) {
-        outputStream.write(buffer, 0, read)
-    }
-}
-
-@Composable
-fun getFilePathFromAssets(name: String): String {
-    val context = LocalContext.current
-    return remember {
-        val assetManager = context.assets
-        val inputStream = assetManager.open(name)
-        val file = File(context.filesDir, name)
-        copyFile(inputStream, file.outputStream())
-        file.absolutePath
-    }
-}
 
 class MainActivity : ComponentActivity() {
 
     private var nfcAdapter: NfcAdapter? = null
-    private lateinit var nfcText: TextView
     private var onTagScanned: ((String) -> Unit)? = null
-
-    private lateinit var pendingIntent: PendingIntent
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,21 +53,46 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            Surface {
-                var tagContent by remember { mutableStateOf("Scan an NFC tag...") }
+            var tagContent by remember { mutableStateOf("Scan an NFC tag...") }
+            var scanState by remember { mutableStateOf(ScanState.Idle) }
+            var scannedName by remember { mutableStateOf("") }
+            val scannedSet = remember { mutableStateListOf<String>() }
 
-                // Assign the lambda to update UI from NFC callback
-                onTagScanned = { content -> tagContent = content }
-                MainScreen(tagContent)
+            LaunchedEffect(scanState) {
+                if (scanState != ScanState.Idle) {
+                    kotlinx.coroutines.delay(1000L) // 1 second delay
+                    scanState = ScanState.Idle
+                    scannedName = ""
+                }
             }
 
+
+            onTagScanned = { tagId ->
+                tagContent = "NFC Tag Content: $tagId"
+
+                if (scannedSet.contains(tagId)) {
+                    scanState = ScanState.AlreadyScanned
+                } else {
+                    scannedSet.add(tagId)
+                    scanState = ScanState.Success
+                }
+
+                scannedName = tagId
+            }
+
+            MainScreen(
+                tagText = tagContent,
+                scanState = scanState,
+                scannedName = scannedName
+            )
         }
     }
 
     override fun onResume() {
         super.onResume()
         val intent = Intent(this, javaClass).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
-        val pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_MUTABLE)
+        val pendingIntent =
+            PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_MUTABLE)
         nfcAdapter?.enableForegroundDispatch(this, pendingIntent, null, null)
     }
 
@@ -110,26 +111,55 @@ class MainActivity : ComponentActivity() {
             val records = message?.records
             val payload = records?.get(0)?.payload
             val text = payload?.drop(3)?.toByteArray()?.toString(Charsets.UTF_8) // skip lang bytes
-            //nfcText.text = "NFC Tag Content: $text"
-            onTagScanned?.invoke("NFC Tag Content: $text")
+            onTagScanned?.invoke(text.toString())
             ndef?.close()
         }
     }
 }
 
+enum class ScanState {
+    Idle, Success, AlreadyScanned
+}
+
 @Composable
-fun MainScreen(tagText: String) {
+fun MainScreen(
+    tagText: String,
+    scannedName: String = "",
+    scanState: ScanState = ScanState.Idle
+) {
     var selectedTab by remember { mutableStateOf(0) }
     val tabs = listOf("Circom", "Halo2", "Noir")
 
-    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-        Column(modifier = Modifier
+    // Gradient background based on scan state
+    val backgroundGradient = Brush.verticalGradient(
+        colors = when (scanState) {
+            ScanState.Success -> listOf(Color(0xFFD1F5D3), Color(0xFFA8E6A3))
+            ScanState.AlreadyScanned -> listOf(Color(0xFFF9D5D5), Color(0xFFF4B6B6))
+            ScanState.Idle -> listOf(Color(0xFFECECEC), Color(0xFFDCDCDC))
+        }
+    )
+
+    Scaffold(
+        modifier = Modifier
             .fillMaxSize()
-            .padding(innerPadding)
+            .background(brush = backgroundGradient)
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(16.dp)
         ) {
             Text("NFC Reader", fontSize = 24.sp)
+
             Spacer(modifier = Modifier.height(20.dp))
-            Text(tagText, fontSize = 18.sp)
+
+            // Cute scan feedback UI
+            CuteScanFeedback(scanState, scannedName)
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Tabs and content
             TabRow(selectedTabIndex = selectedTab) {
                 tabs.forEachIndexed { index, title ->
                     Tab(
@@ -139,13 +169,60 @@ fun MainScreen(tagText: String) {
                     )
                 }
             }
+
             Spacer(modifier = Modifier.height(16.dp))
+
             when (selectedTab) {
                 0 -> MultiplierComponent()
                 1 -> FibonacciComponent()
                 2 -> NoirComponent()
             }
+        }
+    }
+}
+@Composable
+fun CuteScanFeedback(scanState: ScanState, scannedName: String) {
+    val emoji = when (scanState) {
+        ScanState.Success -> "🎉"
+        ScanState.AlreadyScanned -> "🥺"
+        ScanState.Idle -> "📶"
+    }
 
+    val message = when (scanState) {
+        ScanState.Success -> "You just scanned $scannedName!"
+        ScanState.AlreadyScanned -> "You already scanned $scannedName."
+        ScanState.Idle -> "Waiting for a tag..."
+    }
+
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .fillMaxHeight(0.75f)  // fill 75% of vertical space
+            .padding(horizontal = 16.dp),
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = emoji,
+                    fontSize = 80.sp,
+                    modifier = Modifier.padding(bottom = 24.dp)
+                )
+                Text(
+                    text = message,
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.DarkGray,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+            }
         }
     }
 }
