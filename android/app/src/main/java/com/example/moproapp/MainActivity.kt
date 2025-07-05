@@ -14,10 +14,22 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
+
+import android.app.PendingIntent
+import android.content.Intent
+import android.nfc.NdefMessage
+import android.nfc.NfcAdapter
+import android.nfc.Tag
+import android.nfc.tech.Ndef
+import android.provider.Settings
+import android.widget.TextView
+import android.widget.Toast
+
 
 @Throws(IOException::class)
 fun copyFile(inputStream: InputStream, outputStream: OutputStream) {
@@ -41,16 +53,72 @@ fun getFilePathFromAssets(name: String): String {
 }
 
 class MainActivity : ComponentActivity() {
+
+    private var nfcAdapter: NfcAdapter? = null
+    private lateinit var nfcText: TextView
+    private var onTagScanned: ((String) -> Unit)? = null
+
+    private lateinit var pendingIntent: PendingIntent
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        nfcAdapter = NfcAdapter.getDefaultAdapter(this)
+
+        if (nfcAdapter == null) {
+            Toast.makeText(this, "NFC is not available", Toast.LENGTH_LONG).show()
+            finish()
+            return
+        }
+
+        if (!nfcAdapter!!.isEnabled) {
+            Toast.makeText(this, "Enable NFC in settings", Toast.LENGTH_LONG).show()
+            startActivity(Intent(Settings.ACTION_NFC_SETTINGS))
+        }
+
         setContent {
-            MainScreen()
+            Surface {
+                var tagContent by remember { mutableStateOf("Scan an NFC tag...") }
+
+                // Assign the lambda to update UI from NFC callback
+                onTagScanned = { content -> tagContent = content }
+                MainScreen(tagContent)
+            }
+
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        val intent = Intent(this, javaClass).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        val pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_MUTABLE)
+        nfcAdapter?.enableForegroundDispatch(this, pendingIntent, null, null)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        nfcAdapter?.disableForegroundDispatch(this)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        val tag: Tag? = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG)
+        tag?.let {
+            val ndef = Ndef.get(tag)
+            ndef?.connect()
+            val message: NdefMessage? = ndef?.ndefMessage
+            val records = message?.records
+            val payload = records?.get(0)?.payload
+            val text = payload?.drop(3)?.toByteArray()?.toString(Charsets.UTF_8) // skip lang bytes
+            //nfcText.text = "NFC Tag Content: $text"
+            onTagScanned?.invoke("NFC Tag Content: $text")
+            ndef?.close()
         }
     }
 }
 
 @Composable
-fun MainScreen() {
+fun MainScreen(tagText: String) {
     var selectedTab by remember { mutableStateOf(0) }
     val tabs = listOf("Circom", "Halo2", "Noir")
 
@@ -59,6 +127,9 @@ fun MainScreen() {
             .fillMaxSize()
             .padding(innerPadding)
         ) {
+            Text("NFC Reader", fontSize = 24.sp)
+            Spacer(modifier = Modifier.height(20.dp))
+            Text(tagText, fontSize = 18.sp)
             TabRow(selectedTabIndex = selectedTab) {
                 tabs.forEachIndexed { index, title ->
                     Tab(
@@ -74,6 +145,7 @@ fun MainScreen() {
                 1 -> FibonacciComponent()
                 2 -> NoirComponent()
             }
+
         }
     }
 }
