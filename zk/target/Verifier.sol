@@ -2,8 +2,6 @@
 // Copyright 2022 Aztec
 pragma solidity >=0.8.21;
 
-import "hardhat/console.sol";
-
 uint256 constant N = 32768;
 uint256 constant LOG_N = 15;
 uint256 constant NUMBER_OF_PUBLIC_INPUTS = 48;
@@ -420,7 +418,6 @@ library Honk {
         // Sumcheck
         Fr libraSum;
         Fr[ZK_BATCHED_RELATION_PARTIAL_LENGTH][CONST_PROOF_SIZE_LOG_N] sumcheckUnivariates;
-
         Fr[NUMBER_OF_ENTITIES] sumcheckEvaluations;
         Fr libraEvaluation;
         // ZK
@@ -1690,9 +1687,6 @@ abstract contract BaseZKHonkVerifier is IVerifier {
         override
         returns (bool verified)
     {
-
-                console.log("here");
-
         // Check the received proof is the expected size where each field element is 32 bytes
         if (proof.length != PROOF_SIZE * 32) {
             revert ProofLengthWrong();
@@ -1705,7 +1699,6 @@ abstract contract BaseZKHonkVerifier is IVerifier {
             revert PublicInputsLengthWrong();
         }
 
-        
         // Generate the fiat shamir challenges for the whole protocol
         ZKTranscript memory t =
             ZKTranscriptLib.generateTranscript(p, publicInputs, vk.circuitSize, $NUM_PUBLIC_INPUTS, /*pubInputsOffset=*/ 1);

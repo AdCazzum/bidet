@@ -1,11 +1,4 @@
-fn main(x: Field, y: pub Field) {
-    assert(x != y);
-}
-
-#[test]
-fn test_main() {
-    main(1, 2);
-
-    // Uncomment to make test fail
-    // main(1, 1);
+fn main(bracelet_pk: [u8; 32], bracelet_hash: pub [u8; 32]) {
+    let hash = std::hash::blake3(bracelet_pk);
+    assert(hash == bracelet_hash);
 }
