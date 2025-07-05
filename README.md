@@ -25,3 +25,14 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+
+# Build bindings for Mopro
+Inside ./mopro directory run
+
+## Requirements
+- `make`
+- `rustup`
+
+```bash
+ANDROID_NDK_HOME=/home/<user>/Android/Sdk/ndk RUST_BACKTRACE=1 ../.bin/mopro build --platforms android
+```
